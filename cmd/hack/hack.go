@@ -36,7 +36,6 @@ import (
 	"github.com/ledgerwatch/erigon-lib/kv/mdbx"
 	"github.com/ledgerwatch/erigon-lib/patricia"
 	"github.com/ledgerwatch/erigon-lib/recsplit"
-	"github.com/ledgerwatch/erigon-lib/recsplit/eliasfano32"
 	hackdb "github.com/ledgerwatch/erigon/cmd/hack/db"
 	"github.com/ledgerwatch/erigon/cmd/hack/flow"
 	"github.com/ledgerwatch/erigon/cmd/hack/tool"
@@ -2669,46 +2668,6 @@ func checkBlockSnapshot(chaindata string) error {
 	}
 	defer tx.Rollback()
 
-	m0, m1, m2, m3 := roaring64.New(), roaring64.New(), roaring64.New(), roaring64.New()
-	var fromBlockNum uint64 = 10_000_000
-	// each block has 500 txs
-	// store every 3-rd block and every 100-th txn number - to destroy run-length optimization
-	for blockNum := fromBlockNum; blockNum < fromBlockNum+10000; blockNum += 20 {
-		for i := uint64(0); i < 200; i += 200 {
-			m0.Add(blockNum)                  // only block numbers
-			m1.Add(blockNum*(200/3) + i)      // txId sequence
-			m2.Add(blockNum*0x1_00_00_00 + i) // txId in Lo 3 bytes
-			m3.Add(blockNum + i*0x1_00_00_00) // txId in Hi 4 bytes
-		}
-	}
-	fmt.Println(m0.GetSerializedSizeInBytes()) // 20
-	fmt.Println(m1.GetSerializedSizeInBytes()) // 2031
-	fmt.Println(m2.GetSerializedSizeInBytes()) // 3520
-	fmt.Println(m3.GetSerializedSizeInBytes()) // 1043
-
-	in := m3.ToArray()
-	// Treat each byte of the sequence as difference between previous value and the next
-	count := len(in)
-	keys := make([]uint64, count+1)
-	var minDeltaCumKeys uint64
-	for i, b := range in {
-		keys[i+1] = keys[i] + uint64(b)
-		if i == 0 || uint64(b) < minDeltaCumKeys {
-			minDeltaCumKeys = uint64(b)
-		}
-	}
-
-	ef := eliasfano32.NewEliasFano(uint64(count+1), keys[count], minDeltaCumKeys)
-	for _, c := range keys {
-		ef.AddOffset(c)
-	}
-	ef.Build()
-
-	buf := bytes.NewBuffer(nil)
-	ef.Write(buf)
-	fmt.Printf("%d\n", buf.Len()/1024)
-	return nil
-
 	for i := uint64(0); i < snapshots.BlocksAvailable(); i++ {
 		hash, err := rawdb.ReadCanonicalHash(tx, i)
 		if err != nil {
@@ -2727,6 +2686,47 @@ func checkBlockSnapshot(chaindata string) error {
 			log.Info(fmt.Sprintf("Block Num: %dK", i/1_000))
 		}
 	}
+	/*
+		m0, m1, m2, m3 := roaring64.New(), roaring64.New(), roaring64.New(), roaring64.New()
+			var fromBlockNum uint64 = 10_000_000
+			// each block has 500 txs
+			// store every 3-rd block and every 100-th txn number - to destroy run-length optimization
+			for blockNum := fromBlockNum; blockNum < fromBlockNum+10000; blockNum += 20 {
+				for i := uint64(0); i < 200; i += 200 {
+					m0.Add(blockNum)                  // only block numbers
+					m1.Add(blockNum*(200/3) + i)      // txId sequence
+					m2.Add(blockNum*0x1_00_00_00 + i) // txId in Lo 3 bytes
+					m3.Add(blockNum + i*0x1_00_00_00) // txId in Hi 4 bytes
+				}
+			}
+			fmt.Println(m0.GetSerializedSizeInBytes()) // 20
+			fmt.Println(m1.GetSerializedSizeInBytes()) // 2031
+			fmt.Println(m2.GetSerializedSizeInBytes()) // 3520
+			fmt.Println(m3.GetSerializedSizeInBytes()) // 1043
+
+			in := m3.ToArray()
+			// Treat each byte of the sequence as difference between previous value and the next
+			count := len(in)
+			keys := make([]uint64, count+1)
+			var minDeltaCumKeys uint64
+			for i, b := range in {
+				keys[i+1] = keys[i] + uint64(b)
+				if i == 0 || uint64(b) < minDeltaCumKeys {
+					minDeltaCumKeys = uint64(b)
+				}
+			}
+
+			ef := eliasfano32.NewEliasFano(uint64(count+1), keys[count], minDeltaCumKeys)
+			for _, c := range keys {
+				ef.AddOffset(c)
+			}
+			ef.Build()
+
+			buf := bytes.NewBuffer(nil)
+			ef.Write(buf)
+			fmt.Printf("%d\n", buf.Len()/1024)
+			return nil
+	*/
 	return nil
 }
 
