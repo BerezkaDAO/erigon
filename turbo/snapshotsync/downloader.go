@@ -381,6 +381,7 @@ func GetInfo() {
 
 func SnapshotSeeding(chainDB kv.RwDB, cli *Client, name string, snapshotsDir string) error {
 	var snapshotBlock uint64
+	_ = snapshotBlock
 	var hasSnapshotBlock bool
 	if err := chainDB.View(context.Background(), func(tx kv.Tx) error {
 		v, err := tx.GetOne(kv.BittorrentInfo, kv.CurrentHeadersSnapshotBlock)
@@ -399,7 +400,7 @@ func SnapshotSeeding(chainDB kv.RwDB, cli *Client, name string, snapshotsDir str
 	}
 
 	if hasSnapshotBlock {
-		hash, err := cli.SeedSnapshot(name, SnapshotName(snapshotsDir, name, snapshotBlock))
+		hash, err := cli.SeedSnapshot(name, "") //SnapshotName(snapshotsDir, name, snapshotBlock))
 		if err != nil {
 			return err
 		}

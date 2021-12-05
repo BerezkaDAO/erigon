@@ -152,3 +152,7 @@ func CompositeKeySuffix(key []byte, timestamp uint64) (composite, encodedTS []by
 	copy(composite[len(key):], encodedTS)
 	return composite, encodedTS
 }
+
+func TxnId(blockNumber, txnNumInBlock uint64) uint64 {
+	return blockNumber*0x1_00_00_00 + txnNumInBlock
+}

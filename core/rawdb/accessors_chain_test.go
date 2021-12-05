@@ -395,6 +395,7 @@ func TestBlockReceiptStorage(t *testing.T) {
 	}
 	// Delete the body and ensure that the receipts are no longer returned (metadata can't be recomputed)
 	DeleteHeader(tx, hash, 0)
+	DeleteCanonicalTxs(tx, hash, 0)
 	DeleteBody(tx, hash, 0)
 	b, senders, err = ReadBlockWithSenders(tx, hash, 0)
 	require.NoError(err)

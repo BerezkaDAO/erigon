@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/ledgerwatch/erigon-lib/common/u256"
-	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon-lib/kv/memdb"
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/core/rawdb"
@@ -37,26 +36,15 @@ func TestBodiesUnwind(t *testing.T) {
 	{
 		err = rawdb.MakeBodiesNonCanonical(tx, 5+1, ctx, "test", logEvery) // block 5 already canonical, start from next one
 		require.NoError(err)
-
-		n, err := tx.ReadSequence(kv.EthTx)
-		require.NoError(err)
-		require.Equal(5*3, int(n)) // from 0, 5 block with 3 txn in each
 	}
 	{
 		err = rawdb.MakeBodiesCanonical(tx, 5+1, ctx, "test", logEvery) // block 5 already canonical, start from next one
 		require.NoError(err)
-		n, err := tx.ReadSequence(kv.EthTx)
-		require.NoError(err)
-		require.Equal(10*3, int(n))
 
 		err = rawdb.WriteRawBody(tx, common.Hash{11}, 11, b)
 		require.NoError(err)
 		err = rawdb.WriteCanonicalHash(tx, common.Hash{11}, 11)
 		require.NoError(err)
-
-		n, err = tx.ReadSequence(kv.EthTx)
-		require.NoError(err)
-		require.Equal(11*3, int(n))
 	}
 
 	{
@@ -64,14 +52,7 @@ func TestBodiesUnwind(t *testing.T) {
 		err = rawdb.MakeBodiesNonCanonical(tx, 5+1, ctx, "test", logEvery)
 		require.NoError(err)
 
-		n, err := tx.ReadSequence(kv.EthTx)
-		require.NoError(err)
-		require.Equal(5*3, int(n)) // from 0, 5 block with 3 txn in each
-
 		err = rawdb.MakeBodiesCanonical(tx, 5+1, ctx, "test", logEvery) // block 5 already canonical, start from next one
 		require.NoError(err)
-		n, err = tx.ReadSequence(kv.EthTx)
-		require.NoError(err)
-		require.Equal(11*3, int(n))
 	}
 }
