@@ -2,7 +2,6 @@ package migrations
 
 import (
 	"bytes"
-	"context"
 	"encoding/binary"
 
 	"github.com/ledgerwatch/erigon-lib/kv"
@@ -13,21 +12,21 @@ import (
 	"github.com/ledgerwatch/log/v3"
 )
 
-var txsShard = Migration{
-	Name: "txs_shard",
-	Up: func(db kv.RwDB, tmpdir string, progress []byte, BeforeCommit Callback) (err error) {
-		tx, err := db.BeginRw(context.Background())
-		if err != nil {
-			return err
-		}
-		defer tx.Rollback()
-
-		if err := BeforeCommit(tx, nil, true); err != nil {
-			return err
-		}
-		return tx.Commit()
-	},
-}
+//var txsShard = Migration{
+//	Name: "txs_shard",
+//	Up: func(db kv.RwDB, tmpdir string, progress []byte, BeforeCommit Callback) (err error) {
+//		tx, err := db.BeginRw(context.Background())
+//		if err != nil {
+//			return err
+//		}
+//		defer tx.Rollback()
+//
+//		if err := BeforeCommit(tx, nil, true); err != nil {
+//			return err
+//		}
+//		return tx.Commit()
+//	},
+//}
 
 type DeprecatedBodyForStorage struct {
 	BaseTxId uint64

@@ -3157,7 +3157,7 @@ func extractBodies(chaindata string, block uint64) error {
 		blockNumber := binary.BigEndian.Uint64(k[:8])
 		blockHash := common.BytesToHash(k[8:])
 		_, txAmount := rawdb.ReadBody(tx, blockHash, blockNumber)
-		fmt.Printf("Body %d %x: baseTxId %d, txAmount %d\n", blockNumber, blockHash, baseTxId, txAmount)
+		fmt.Printf("Body %d %x: txAmount %d\n", blockNumber, blockHash, txAmount)
 	}
 	return nil
 }
@@ -3439,6 +3439,7 @@ func fixState(chaindata string) error {
 }
 
 func trimTxs(chaindata string) error {
+	/* TODO: need to test with new txs db layout
 	db := mdbx.MustOpen(chaindata)
 	defer db.Close()
 	tx, err := db.BeginRw(context.Background())
@@ -3471,8 +3472,9 @@ func trimTxs(chaindata string) error {
 		if err = rlp.DecodeBytes(v, &body); err != nil {
 			return err
 		}
+		baseTxId := binary.BigEndian.Uint64(k[:8])
 		// Remove from the map
-		toDelete.RemoveRange(body.BaseTxId, body.BaseTxId+uint64(body.TxAmount))
+		toDelete.RemoveRange(baseTxId, baseTxId+uint64(body.TxAmount))
 	}
 	fmt.Printf("Number of tx records to delete: %d\n", toDelete.GetCardinality())
 	// Takes 20min to iterate 1.4b
@@ -3528,6 +3530,7 @@ func trimTxs(chaindata string) error {
 		}
 		defer txs.Close()
 	}
+	*/
 	return nil
 }
 
