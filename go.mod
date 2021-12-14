@@ -35,7 +35,7 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/kevinburke/go-bindata v3.21.0+incompatible
-	github.com/ledgerwatch/erigon-lib v0.0.0-20211214044408-c9b7c1dd8718
+	github.com/ledgerwatch/erigon-lib v0.0.0-20211214045159-ed4036a6bd6d
 	github.com/ledgerwatch/log/v3 v3.4.0
 	github.com/ledgerwatch/secp256k1 v1.0.0
 	github.com/logrusorgru/aurora/v3 v3.0.0
@@ -47,7 +47,7 @@ require (
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
-	github.com/torquem-ch/mdbx-go v0.22.3-0.20211214044231-c77c027bd0f8
+	github.com/torquem-ch/mdbx-go v0.22.3-0.20211214045119-ea10ce79c113
 	github.com/ugorji/go/codec v1.1.13
 	github.com/ugorji/go/codec/codecgen v1.1.13
 	github.com/urfave/cli v1.22.5
