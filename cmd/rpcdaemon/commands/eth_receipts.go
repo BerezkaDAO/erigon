@@ -327,6 +327,46 @@ func (api *APIImpl) GetBlockReceipts(ctx context.Context, number rpc.BlockNumber
 	return result, nil
 }
 
+// GetBlockReceipts - receipts for individual block
+func (api *APIImpl) GetManyBlockReceipts(ctx context.Context, from, to rpc.BlockNumber) ([]map[string]interface{}, error) {
+	tx, err := api.db.BeginRo(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	result := []map[string]interface{}{}
+
+	for i := from; i <= to; i++ {
+		blockNum, err := getBlockNumber(i, tx)
+		if err != nil {
+			return nil, err
+		}
+		block, err := api.blockByNumberWithSenders(tx, blockNum)
+		if err != nil {
+			return nil, err
+		}
+		if block == nil {
+			return nil, nil
+		}
+		chainConfig, err := api.chainConfig(tx)
+		if err != nil {
+			return nil, err
+		}
+		receipts, err := getReceipts(ctx, tx, chainConfig, block, block.Body().SendersFromTxs())
+		if err != nil {
+			return nil, fmt.Errorf("getReceipts error: %w", err)
+		}
+		// result := make([]map[string]interface{}, 0, len(receipts))
+		for _, receipt := range receipts {
+			txn := block.Transactions()[receipt.TransactionIndex]
+			result = append(result, marshalReceipt(receipt, txn, chainConfig, block))
+		}
+	}
+
+	return result, nil
+}
+
 func marshalReceipt(receipt *types.Receipt, txn types.Transaction, chainConfig *params.ChainConfig, block *types.Block) map[string]interface{} {
 	var chainId *big.Int
 	switch t := txn.(type) {
