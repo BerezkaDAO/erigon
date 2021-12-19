@@ -40,6 +40,7 @@ type EthAPI interface {
 	GetRawTransactionByBlockNumberAndIndex(ctx context.Context, blockNr rpc.BlockNumber, index hexutil.Uint) (hexutil.Bytes, error)
 	GetRawTransactionByBlockHashAndIndex(ctx context.Context, blockHash common.Hash, index hexutil.Uint) (hexutil.Bytes, error)
 	GetRawTransactionByHash(ctx context.Context, hash common.Hash) (hexutil.Bytes, error)
+	GetBlockTransactions(ctx context.Context, number rpc.BlockNumber) ([]*RPCTransaction, error)
 
 	// Receipt related (see ./eth_receipts.go)
 	GetTransactionReceipt(ctx context.Context, hash common.Hash) (map[string]interface{}, error)

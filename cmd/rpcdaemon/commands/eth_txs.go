@@ -196,3 +196,33 @@ func (api *APIImpl) GetRawTransactionByBlockNumberAndIndex(ctx context.Context, 
 
 	return newRPCRawTransactionFromBlockIndex(block, uint64(index))
 }
+
+func (api *APIImpl) GetBlockTransactions(ctx context.Context, number rpc.BlockNumber) ([]*RPCTransaction, error) {
+	fmt.Println("GetBlockTransactions")
+	tx, err := api.db.BeginRo(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	// https://infura.io/docs/ethereum/json-rpc/eth-getTransactionByBlockNumberAndIndex
+	blockNum, err := getBlockNumber(number, tx)
+	if err != nil {
+		return nil, err
+	}
+
+	block, err := api.blockByNumberWithSenders(tx, blockNum)
+	if err != nil {
+		return nil, err
+	}
+	if block == nil {
+		return nil, nil // not error, see https://github.com/ledgerwatch/erigon/issues/1645
+	}
+
+	txs := block.Transactions()
+	ret := make([]*RPCTransaction, 0, len(txs))
+	for txIndex := range txs {
+		ret = append(ret, newRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee()))
+	}
+	return ret, nil
+}
