@@ -838,6 +838,82 @@ func (api *TraceAPIImpl) ReplayBlockTransactions(ctx context.Context, blockNrOrH
 
 	return result, nil
 }
+func (api *TraceAPIImpl) ReplayManyBlockTransactions(ctx context.Context, blockFrom, blockTo rpc.BlockNumberOrHash, traceTypes []string) ([]*TraceCallResult, error) {
+	tx, err := api.kv.BeginRo(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	chainConfig, err := api.chainConfig(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	blockNumberFrom, _, err := rpchelper.GetBlockNumber(blockFrom, tx, api.filters)
+	if err != nil {
+		return nil, err
+	}
+	blockNumberTo, _, err := rpchelper.GetBlockNumber(blockTo, tx, api.filters)
+	if err != nil {
+		return nil, err
+	}
+	result := []*TraceCallResult{}
+
+	for blockNumber := blockNumberFrom; blockNumber <= blockNumberTo; blockNumber++ {
+
+		parentNr := blockNumber
+		if parentNr > 0 {
+			parentNr -= 1
+		}
+		// Extract transactions from block
+		block, bErr := api.blockByNumberWithSenders(tx, blockNumber)
+		if bErr != nil {
+			return nil, bErr
+		}
+		if block == nil {
+			return nil, fmt.Errorf("could not find block  %d", blockNumber)
+		}
+		var traceTypeTrace, traceTypeStateDiff, traceTypeVmTrace bool
+		for _, traceType := range traceTypes {
+			switch traceType {
+			case TraceTypeTrace:
+				traceTypeTrace = true
+			case TraceTypeStateDiff:
+				traceTypeStateDiff = true
+			case TraceTypeVmTrace:
+				traceTypeVmTrace = true
+			default:
+				return nil, fmt.Errorf("unrecognized trace type: %s", traceType)
+			}
+		}
+
+		// Returns an array of trace arrays, one trace array for each transaction
+		traces, err := api.callManyTransactions(ctx, tx, block.Transactions(), traceTypes, block.ParentHash(), rpc.BlockNumber(parentNr), block.Header(), -1 /* all tx indices */, types.MakeSigner(chainConfig, blockNumber))
+		if err != nil {
+			return nil, err
+		}
+
+		for i, trace := range traces {
+			tr := &TraceCallResult{}
+			tr.Output = trace.Output
+			if traceTypeTrace {
+				tr.Trace = trace.Trace
+			} else {
+				tr.Trace = []*ParityTrace{}
+			}
+			if traceTypeStateDiff {
+				tr.StateDiff = trace.StateDiff
+			}
+			if traceTypeVmTrace {
+				tr.VmTrace = trace.VmTrace
+			}
+			result[i] = tr
+			txhash := block.Transactions()[i].Hash()
+			tr.TransactionHash = &txhash
+		}
+	}
+	return result, nil
+}
 
 // Call implements trace_call.
 func (api *TraceAPIImpl) Call(ctx context.Context, args TraceCallParam, traceTypes []string, blockNrOrHash *rpc.BlockNumberOrHash) (*TraceCallResult, error) {

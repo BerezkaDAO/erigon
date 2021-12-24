@@ -16,6 +16,7 @@ import (
 type TraceAPI interface {
 	// Ad-hoc (see ./trace_adhoc.go)
 	ReplayBlockTransactions(ctx context.Context, blockNr rpc.BlockNumberOrHash, traceTypes []string) ([]*TraceCallResult, error)
+	ReplayManyBlockTransactions(ctx context.Context, blockFrom, blockTo rpc.BlockNumberOrHash, traceTypes []string) ([]*TraceCallResult, error)
 	ReplayTransaction(ctx context.Context, txHash common.Hash, traceTypes []string) (*TraceCallResult, error)
 	Call(ctx context.Context, call TraceCallParam, types []string, blockNr *rpc.BlockNumberOrHash) (*TraceCallResult, error)
 	CallMany(ctx context.Context, calls json.RawMessage, blockNr *rpc.BlockNumberOrHash) ([]*TraceCallResult, error)
