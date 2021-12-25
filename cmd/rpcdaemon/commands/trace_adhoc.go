@@ -908,6 +908,10 @@ func (api *TraceAPIImpl) ReplayManyBlockTransactions(ctx context.Context, blockF
 				tr.VmTrace = trace.VmTrace
 			}
 			// result[i] = tr
+			for tmpi, tmp := range tr.Trace {
+				tmp.BlockNumber = &blockNumber
+				tr.Trace[tmpi] = tmp
+			}
 			result = append(result, tr)
 			txhash := block.Transactions()[i].Hash()
 			tr.TransactionHash = &txhash
