@@ -909,7 +909,8 @@ func (api *TraceAPIImpl) ReplayManyBlockTransactions(ctx context.Context, blockF
 			}
 			// result[i] = tr
 			for tmpi, tmp := range tr.Trace {
-				tmp.BlockNumber = &blockNumber
+				tmpBlockNumber := blockNumber
+				tmp.BlockNumber = &tmpBlockNumber
 				tr.Trace[tmpi] = tmp
 			}
 			result = append(result, tr)
