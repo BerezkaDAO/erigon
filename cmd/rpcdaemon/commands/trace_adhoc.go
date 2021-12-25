@@ -907,7 +907,8 @@ func (api *TraceAPIImpl) ReplayManyBlockTransactions(ctx context.Context, blockF
 			if traceTypeVmTrace {
 				tr.VmTrace = trace.VmTrace
 			}
-			result[i] = tr
+			// result[i] = tr
+			result = append(result, tr)
 			txhash := block.Transactions()[i].Hash()
 			tr.TransactionHash = &txhash
 		}
