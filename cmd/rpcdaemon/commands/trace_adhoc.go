@@ -975,18 +975,30 @@ func (api *TraceAPIImpl) GetETHTransactions(ctx context.Context, blockFrom, bloc
 			for _, r := range trace.Trace {
 				if r.Error == "" {
 					action, ok := r.Action.(*CallTraceAction)
-					if !ok {
-						return nil, fmt.Errorf("unable to conver \"%T\" into commands.CallTraceAction", r.Action)
-					}
-
-					if action.Value.ToInt().Sign() == 1 && action.CallType != "delegatecall" {
-						result = append(result, &InternalTransaction{
-							TxHash:      block.Transactions()[i].Hash(),
-							BlockNumber: uint64(block.Number().Int64()),
-							From:        action.From,
-							To:          action.To,
-							Amount:      action.Value.ToInt(),
-						})
+					if ok {
+						if action.Value.ToInt().Sign() == 1 && action.CallType != "delegatecall" {
+							result = append(result, &InternalTransaction{
+								TxHash:      block.Transactions()[i].Hash(),
+								BlockNumber: uint64(block.Number().Int64()),
+								From:        action.From,
+								To:          action.To,
+								Amount:      action.Value.ToInt(),
+							})
+						}
+					} else {
+						// Пока пропускаем
+						action, ok := r.Action.(*CreateTraceAction)
+						if ok {
+							if action.Value.ToInt().Sign() == 1 {
+								result = append(result, &InternalTransaction{
+									TxHash:      block.Transactions()[i].Hash(),
+									BlockNumber: uint64(block.Number().Int64()),
+									From:        action.From,
+									To:          common.HexToAddress("0x0000000000000000000000000000000000000000"),
+									Amount:      action.Value.ToInt(),
+								})
+							}
+						}
 					}
 				}
 			}
