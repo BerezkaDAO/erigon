@@ -980,7 +980,7 @@ func (api *TraceAPIImpl) GetETHTransactions(ctx context.Context, blockFrom, bloc
 					// 	addrs = append(addrs, strconv.FormatInt(int64(ta), 10))
 					// }
 					// addr := strings.Join(addrs, "_")
-					action := r.Action.(TraceAction)
+					action := r.Action.(*TraceAction)
 					value, err := hexutil.DecodeBig(action.Value)
 					if err != nil {
 						return nil, err
