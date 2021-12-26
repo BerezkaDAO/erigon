@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"strconv"
 	"strings"
 	"time"
 
@@ -72,6 +73,7 @@ type TraceCallResult struct {
 type InternalTransaction struct {
 	TxHash      common.Hash    `json:"tx_hash"`
 	BlockNumber uint64         `json:"block_number"`
+	Index       string         `json:"index"`
 	Type        string         `json:"type"`
 	From        common.Address `json:"from"`
 	To          common.Address `json:"to"`
@@ -981,6 +983,7 @@ func (api *TraceAPIImpl) GetETHTransactions(ctx context.Context, blockFrom, bloc
 							result = append(result, &InternalTransaction{
 								TxHash:      block.Transactions()[i].Hash(),
 								BlockNumber: uint64(block.Number().Int64()),
+								Index:       IntToString2(r.TraceAddress),
 								Type:        "transfer",
 								From:        action.From,
 								To:          action.To,
@@ -995,6 +998,7 @@ func (api *TraceAPIImpl) GetETHTransactions(ctx context.Context, blockFrom, bloc
 								result = append(result, &InternalTransaction{
 									TxHash:      block.Transactions()[i].Hash(),
 									BlockNumber: uint64(block.Number().Int64()),
+									Index:       IntToString2(r.TraceAddress),
 									Type:        "create",
 									From:        action.From,
 									To:          common.HexToAddress("0x0000000000000000000000000000000000000000"),
@@ -1008,6 +1012,15 @@ func (api *TraceAPIImpl) GetETHTransactions(ctx context.Context, blockFrom, bloc
 		}
 	}
 	return result, nil
+}
+
+func IntToString2(a []int) string {
+	b := make([]string, len(a))
+	for i, v := range a {
+		b[i] = strconv.Itoa(v)
+	}
+
+	return strings.Join(b, ",")
 }
 
 // Call implements trace_call.
