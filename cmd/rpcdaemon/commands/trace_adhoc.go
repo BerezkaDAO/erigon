@@ -1020,7 +1020,7 @@ func IntToString2(a []int) string {
 		b[i] = strconv.Itoa(v)
 	}
 
-	return strings.Join(b, ",")
+	return "[" + strings.Join(b, ",") + "]"
 }
 
 // Call implements trace_call.
