@@ -974,22 +974,18 @@ func (api *TraceAPIImpl) GetETHTransactions(ctx context.Context, blockFrom, bloc
 		for i, trace := range traces {
 			for _, r := range trace.Trace {
 				if r.Error == "" {
-					action, ok := r.Action.(map[string]interface{})
+					action, ok := r.Action.(CallTraceAction)
 					if !ok {
-						return nil, fmt.Errorf("unable to conver \"%T\" into map[string]interface{}", r.Action)
+						return nil, fmt.Errorf("unable to conver \"%T\" into commands.CallTraceAction", r.Action)
 					}
 
-					value, err := hexutil.DecodeBig(action["value"].(string))
-					if err != nil {
-						return nil, err
-					}
-					if value.Sign() == 1 && action["callType"].(string) != "delegatecall" {
+					if action.Value.ToInt().Sign() == 1 && action.CallType != "delegatecall" {
 						result = append(result, &InternalTransaction{
 							TxHash:      block.Transactions()[i].Hash(),
 							BlockNumber: uint64(block.Number().Int64()),
-							From:        common.HexToAddress(action["from"].(string)),
-							To:          common.HexToAddress(action["to"].(string)),
-							Amount:      value,
+							From:        action.From,
+							To:          action.To,
+							Amount:      action.Value.ToInt(),
 						})
 					}
 				}
