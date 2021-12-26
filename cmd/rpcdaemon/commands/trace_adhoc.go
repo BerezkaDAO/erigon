@@ -69,6 +69,14 @@ type TraceCallResult struct {
 	TransactionHash *common.Hash                         `json:"transactionHash,omitempty"`
 }
 
+type InternalTransaction struct {
+	TxHash      common.Hash    `json:"tx_hash"`
+	BlockNumber uint64         `json:"block_number"`
+	From        common.Address `json:"from"`
+	To          common.Address `json:"to"`
+	Amount      *big.Int       `json:"amount"`
+}
+
 // StateDiffAccount is the part of `trace_call` response that is under "stateDiff" tag
 type StateDiffAccount struct {
 	Balance interface{}                            `json:"balance"` // Can be either string "=" or mapping "*" => {"from": "hex", "to": "hex"}
@@ -916,6 +924,78 @@ func (api *TraceAPIImpl) ReplayManyBlockTransactions(ctx context.Context, blockF
 			result = append(result, tr)
 			txhash := block.Transactions()[i].Hash()
 			tr.TransactionHash = &txhash
+		}
+	}
+	return result, nil
+}
+
+func (api *TraceAPIImpl) GetETHTransactions(ctx context.Context, blockFrom, blockTo rpc.BlockNumberOrHash, traceTypes []string) ([]*InternalTransaction, error) {
+	tx, err := api.kv.BeginRo(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	chainConfig, err := api.chainConfig(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	blockNumberFrom, _, err := rpchelper.GetBlockNumber(blockFrom, tx, api.filters)
+	if err != nil {
+		return nil, err
+	}
+	blockNumberTo, _, err := rpchelper.GetBlockNumber(blockTo, tx, api.filters)
+	if err != nil {
+		return nil, err
+	}
+	result := []*InternalTransaction{}
+
+	for blockNumber := blockNumberFrom; blockNumber <= blockNumberTo; blockNumber++ {
+
+		parentNr := blockNumber
+		if parentNr > 0 {
+			parentNr -= 1
+		}
+		// Extract transactions from block
+		block, bErr := api.blockByNumberWithSenders(tx, blockNumber)
+		if bErr != nil {
+			return nil, bErr
+		}
+		if block == nil {
+			return nil, fmt.Errorf("could not find block  %d", blockNumber)
+		}
+
+		// Returns an array of trace arrays, one trace array for each transaction
+		traces, err := api.callManyTransactions(ctx, tx, block.Transactions(), traceTypes, block.ParentHash(), rpc.BlockNumber(parentNr), block.Header(), -1 /* all tx indices */, types.MakeSigner(chainConfig, blockNumber))
+		if err != nil {
+			return nil, err
+		}
+
+		for i, trace := range traces {
+			for _, r := range trace.Trace {
+				if r.Error == "" {
+					// fmt.Printf("\tTrace: %d %+v(%T)\n", k, r, r)
+					// addrs := []string{}
+					// for _, ta := range r.TraceAddress {
+					// 	addrs = append(addrs, strconv.FormatInt(int64(ta), 10))
+					// }
+					// addr := strings.Join(addrs, "_")
+					action := r.Action.(TraceAction)
+					value, err := hexutil.DecodeBig(action.Value)
+					if err != nil {
+						return nil, err
+					}
+					if value.Sign() == 1 && action.CallType != "delegatecall" {
+						result = append(result, &InternalTransaction{
+							TxHash:      block.Transactions()[i].Hash(),
+							BlockNumber: uint64(block.Number().Int64()),
+							From:        action.From,
+							To:          common.HexToAddress(action.To),
+							Amount:      value,
+						})
+					}
+				}
+			}
 		}
 	}
 	return result, nil
