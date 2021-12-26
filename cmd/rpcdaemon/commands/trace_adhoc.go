@@ -72,6 +72,7 @@ type TraceCallResult struct {
 type InternalTransaction struct {
 	TxHash      common.Hash    `json:"tx_hash"`
 	BlockNumber uint64         `json:"block_number"`
+	Type        string         `json:"type"`
 	From        common.Address `json:"from"`
 	To          common.Address `json:"to"`
 	Amount      *big.Int       `json:"amount"`
@@ -980,6 +981,7 @@ func (api *TraceAPIImpl) GetETHTransactions(ctx context.Context, blockFrom, bloc
 							result = append(result, &InternalTransaction{
 								TxHash:      block.Transactions()[i].Hash(),
 								BlockNumber: uint64(block.Number().Int64()),
+								Type:        "transfer",
 								From:        action.From,
 								To:          action.To,
 								Amount:      action.Value.ToInt(),
@@ -993,6 +995,7 @@ func (api *TraceAPIImpl) GetETHTransactions(ctx context.Context, blockFrom, bloc
 								result = append(result, &InternalTransaction{
 									TxHash:      block.Transactions()[i].Hash(),
 									BlockNumber: uint64(block.Number().Int64()),
+									Type:        "create",
 									From:        action.From,
 									To:          common.HexToAddress("0x0000000000000000000000000000000000000000"),
 									Amount:      action.Value.ToInt(),
