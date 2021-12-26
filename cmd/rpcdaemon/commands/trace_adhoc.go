@@ -974,7 +974,7 @@ func (api *TraceAPIImpl) GetETHTransactions(ctx context.Context, blockFrom, bloc
 		for i, trace := range traces {
 			for _, r := range trace.Trace {
 				if r.Error == "" {
-					action, ok := r.Action.(CallTraceAction)
+					action, ok := r.Action.(*CallTraceAction)
 					if !ok {
 						return nil, fmt.Errorf("unable to conver \"%T\" into commands.CallTraceAction", r.Action)
 					}
